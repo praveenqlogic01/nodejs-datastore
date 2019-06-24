@@ -41,7 +41,7 @@ import {
   RunQueryCallback,
 } from './query';
 import {Datastore} from '.';
-import { ServiceError } from '@grpc/grpc-js';
+import {ServiceError} from '@grpc/grpc-js';
 
 /**
  * A map of read consistency values to proto codes.
@@ -1043,7 +1043,9 @@ class DatastoreRequest {
 
         if (entityObject.autoUnIndex) {
           entityObject.excludeFromIndexes = this._findLargeProperties(
-            entityObject.data
+            entityObject.data,
+            '',
+            entityObject.excludeFromIndexes
           );
         }
 
@@ -1133,7 +1135,7 @@ class DatastoreRequest {
     );
   }
   /**
-   * Find the properties which value size is large than 1500 bytes, 
+   * Find the properties which value size is large than 1500 bytes,
    * with autoUnIndex enable, automatically exclude properties from indexing.
    * This will allow storing string values larger than 1500 bytes
    * @param entities Datastore key object(s).
@@ -1173,7 +1175,9 @@ class DatastoreRequest {
       typeof entities === 'string' &&
       Buffer.from(entities).length > MAX_DATASTORE_VALUE_LENGTH
     ) {
-      properties.push(path);
+      if (properties.indexOf(path) < 0) {
+        properties.push(path);
+      }
     }
     return properties;
   }
@@ -1237,7 +1241,7 @@ class DatastoreRequest {
 
     this.save(entities, callback);
   }
-  
+
   request_(config: RequestConfig, callback: RequestCallback): void;
   /**
    * Make a request to the API endpoint. Properties to indicate a transactional
