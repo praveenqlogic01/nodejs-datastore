@@ -1390,6 +1390,83 @@ describe('Request', () => {
       );
     });
 
+    it('should prepare excludeFromIndexes array for large values', done => {
+      const longString = Buffer.alloc(1501, '.').toString();
+      const data = {
+        longString,
+        notMetadata: true,
+        longStringArray: [longString],
+        metadata: {
+          longString,
+          otherProperty: 'value',
+          obj: {
+            longStringArray: [
+              {
+                longString,
+                nestedLongStringArray: [
+                  {
+                    longString,
+                    nestedProperty: true,
+                  },
+                  {
+                    longString,
+                  },
+                ],
+              },
+            ],
+          },
+          longStringArray: [
+            {
+              longString,
+              nestedLongStringArray: [
+                {
+                  longString,
+                  nestedProperty: true,
+                },
+                {
+                  longString,
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      const excludeFromIndexes = [
+        'longString',
+        'longStringArray[]',
+        'metadata.longString',
+        'metadata.obj.longStringArray[].longString',
+        'metadata.obj.longStringArray[].nestedLongStringArray[].longString',
+        'metadata.longStringArray[].longString',
+        'metadata.longStringArray[].nestedLongStringArray[].longString',
+      ];
+
+      entity.entityToEntityProto = entity => {
+        return entity;
+      };
+      request.request_ = (config: RequestConfig) => {
+        assert.strictEqual(
+          config.reqOpts.mutations[0].upsert.autoUnIndex,
+          true
+        );
+        assert.deepEqual(
+          config.reqOpts.mutations[0].upsert.excludeFromIndexes,
+          excludeFromIndexes
+        );
+        done();
+      };
+
+      request.save(
+        {
+          key,
+          data,
+          autoUnIndex: true,
+        },
+        assert.ifError
+      );
+    });
+
     it('should assign ID on keys without them', done => {
       const incompleteKey = new entity.Key({path: ['Incomplete']});
       const incompleteKey2 = new entity.Key({path: ['Incomplete']});
